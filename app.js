@@ -4,10 +4,14 @@
  var cors = require('cors');
  var querystring = require('querystring');
  var cookieParser = require('cookie-parser');
+const { access } = require('fs');
  
  var client_id = '4335a95bb28a41f88cc5048fcc64347d'; // Your client id
  var client_secret = 'e5c418a143684cb29fc5c8d0c7efe616'; // Your secret
  var redirect_uri = 'http://localhost:3000/callback'; // Your redirect uri
+ var stateKey = 'spotify_auth_state';
+ 
+ var app = express();
  
  /**
   * Generates a random string containing numbers and letters
@@ -24,9 +28,6 @@
    return text;
  };
  
- var stateKey = 'spotify_auth_state';
- 
- var app = express();
  
  app.use(express.static(__dirname + '/public'))
     .use(cors())
@@ -82,22 +83,22 @@ app.get('/callback', (req, res) => {
       if (!error && response.statusCode === 200) {
         var {access_token} = body,
           {refresh_token} = body;
-        res.redirect('/#' +
-          querystring.stringify({
-            access_token: access_token,
-            refresh_token: refresh_token
-          }));
+				res.redirect(`/home/?access_token=${access_token}`);
       } else {
-        res.redirect('/#' +
-          querystring.stringify({
-            error: 'invalid_token'
-          })
-        );
+        res.sendFile(__dirname + '/public/invalid.html');
       }
     });
   }
 });
  
+app.get('/home', (req, res) => {
+  res.sendFile(__dirname + '/public/home.html');
+});
+
+app.get('/invalid', (_, res) => {
+	res.sendFile(__dirname + '/public/invalid.html');
+});
+
 app.get('/refresh_token', (req, res) => {
  
   // requesting access token from refresh token
@@ -126,7 +127,6 @@ app.get('/getArtist/:artist', (req, res) => {
  
   // requesting access token from refresh token
   const {access_token} = req.query;
-  console.log(req.params);
   const {artist} = req.params;
   var authOptions = {
     url: `https://api.spotify.com/v1/search?q=artist:${artist}&type=artist`,

@@ -85,12 +85,14 @@
         var userProfileSource = document.getElementById('user-profile-template').innerHTML,
             userProfileTemplate = Handlebars.compile(userProfileSource),
             userProfilePlaceholder = document.getElementById('user-profile');
-
+        console.log(userProfileSource);
         var oauthSource = document.getElementById('oauth-template').innerHTML,
             oauthTemplate = Handlebars.compile(oauthSource),
             oauthPlaceholder = document.getElementById('oauth');
 
         var params = getHashParams();
+        console.log('PARAMS');
+        console.log(params);
 
         var {access_token} = params,
             {refresh_token} = params,
@@ -101,6 +103,7 @@
         } else {
           if (access_token) {
             // render oauth info
+            console.log("called");
             oauthPlaceholder.innerHTML = oauthTemplate({
               access_token: access_token,
               refresh_token: refresh_token
@@ -112,6 +115,8 @@
                   'Authorization': 'Bearer ' + access_token
                 }
               }).done(function (response) {
+                console.log('response');
+                console.log(response);
                 userProfilePlaceholder.innerHTML = userProfileTemplate(response);
 
                 $('#login').hide();
@@ -119,6 +124,7 @@
                 $('#searchArtist').show();
             }); 
           } else {
+              console.log("here")
               // render initial screen
               $('#login').show();
               $('#loggedin').hide();
