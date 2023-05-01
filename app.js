@@ -136,10 +136,12 @@ app.get('/getArtist/:artist', (req, res) => {
  
   request.get(authOptions, function(error, response, body) {
     if (!error && response.statusCode === 200) {
-      console.log(response.body);
+      artistArr = []
       for (let i = 0; i < response.body.artists.items.length; i++) {
-        console.log(response.body.artists.items[i].images[0]?.url);
+        if (response.body.artists.items[i].images[0]?.url != undefined)
+          artistArr.push(response.body.artists.items[i].images[0]?.url);
       }
+      res.send(artistArr);
     }
     else {
       console.log(error);

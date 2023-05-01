@@ -30,7 +30,7 @@
       <input id="btnSearchArtist" type="button" class="btn btn-primary" value="Search" />
     </div>
 
-    <div id="searchResults">
+    <div id="searchArtistResults" style="display: flex;">
     </div>
 
     <script id="user-profile-template" type="text/x-handlebars-template">
@@ -118,7 +118,19 @@
             contentType: 'application/json charset=utf-8',
             cache: false              
             }).done(function (response) {
-            console.log(response);
+              let artistResults = document.getElementById('searchArtistResults'); 
+              while (artistResults.firstChild) {
+                artistResults.removeChild(artistResults.firstChild);
+              }
+              response.forEach(artist => {
+                let artistDiv = document.createElement("div");
+                let artistImg = document.createElement("img");
+                artistImg.src = artist;
+                artistImg.width = "150";
+                artistImg.height = "150";
+                artistDiv.appendChild(artistImg);
+                artistResults.appendChild(artistDiv);                
+              });
             }); 
         }
         });
