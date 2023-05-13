@@ -10,6 +10,14 @@
         white-space: nowrap;
         width: 500px;
       }
+
+      .artist {
+        margin: 5px;
+      }
+
+      .artistRow {
+        margin: 50px;
+      }
     </style>
   </head>
 
@@ -64,77 +72,147 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0-alpha.1/handlebars.min.js"></script>
     <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
     <script>
-      (function() {
-        const params = new Proxy(new URLSearchParams(window.location.search), {
-            get: (searchParams, prop) => searchParams.get(prop),
-        });
-        
-        const access_token = params.access_token;
-        var userProfileSource = document.getElementById('user-profile-template').innerHTML,
-            userProfileTemplate = Handlebars.compile(userProfileSource),
-            userProfilePlaceholder = document.getElementById('user-profile');
-        
-        var oauthSource = document.getElementById('oauth-template').innerHTML,
-            oauthTemplate = Handlebars.compile(oauthSource),
-            oauthPlaceholder = document.getElementById('oauth');
-       
-        $.ajax({
-            url: 'https://api.spotify.com/v1/me',
-            headers: {
-                'Authorization': 'Bearer ' + access_token
-            }
-            }).done(function (response) {
-            console.log('response');
-            console.log(response);
-            userProfilePlaceholder.innerHTML = userProfileTemplate(response);
-        }); 
-        
-        document.getElementById('obtain-new-token').addEventListener('click', function() {
-        $.ajax({
-            url: '/refresh_token',
-            data: {
-            'refresh_token': refresh_token
-            }
-        }).done(function(data) {
-            ({access_token} = data);
-            oauthPlaceholder.innerHTML = oauthTemplate({
-            access_token: access_token,
-            refresh_token: refresh_token
-            });
-        });
-        }, false);
-
-        document.getElementById('btnSearchArtist').addEventListener('click', function() {
-        let artist = $('#txtSearchArtist').val(); 
-        if (artist === '') {
-            alert("Artist search must not be empty");
+      const params = new Proxy(new URLSearchParams(window.location.search), {
+        get: (searchParams, prop) => searchParams.get(prop),
+      });
+      
+      const access_token = params.access_token;
+      var userProfileSource = document.getElementById('user-profile-template').innerHTML,
+      userProfileTemplate = Handlebars.compile(userProfileSource),
+      userProfilePlaceholder = document.getElementById('user-profile');
+      
+      var oauthSource = document.getElementById('oauth-template').innerHTML,
+      oauthTemplate = Handlebars.compile(oauthSource),
+      oauthPlaceholder = document.getElementById('oauth');
+      
+      $.ajax({
+        url: 'https://api.spotify.com/v1/me',
+        headers: {
+          'Authorization': 'Bearer ' + access_token
         }
+      }).done(function (response) {
+        userProfilePlaceholder.innerHTML = userProfileTemplate(response);
+      }); 
+      
+      document.getElementById('obtain-new-token').addEventListener('click', function() {
+      $.ajax({
+          url: '/refresh_token',
+          data: {
+            'refresh_token': refresh_token
+          }
+      }).done(function(data) {
+          ({access_token} = data);
+          oauthPlaceholder.innerHTML = oauthTemplate({
+          access_token: access_token,
+          refresh_token: refresh_token
+          });
+        });
+      }, false);
+      
+      function showAlbumTracks(albumId) {
+        let artistAlbumTracks = document.getElementById(albumId).querySelector('#albumTracks');
+        if (artistAlbumTracks)
+          artistAlbumTracks.classList.toggle('hidden');
         else {
-            $.ajax({
-            url: '/getArtist/' + encodeURIComponent(artist),
+          $.ajax({
+            url: `/artists/album/${albumId}/tracks`,
             type: 'GET',
             data: {'access_token': access_token},
             dataType: 'json',
             contentType: 'application/json charset=utf-8',
-            cache: false              
-            }).done(function (response) {
-              let artistResults = document.getElementById('searchArtistResults'); 
-              while (artistResults.firstChild) {
-                artistResults.removeChild(artistResults.firstChild);
-              }
-              response.forEach(artist => {
-                let artistDiv = document.createElement("div");
-                let artistImg = document.createElement("img");
-                artistImg.src = artist;
-                artistImg.width = "150";
-                artistImg.height = "150";
-                artistDiv.appendChild(artistImg);
-                artistResults.appendChild(artistDiv);                
-              });
-            }); 
+            cache: false
+          }).done(function (response) {
+            let albumRow = document.getElementById(response.albumId);
+            let albumTracks = document.createElement('table');
+            albumTracks.id = 'albumTracks';
+            albumRow.appendChild(albumTracks);
+            response.tracks.forEach(track => {
+              let trackRow = document.createElement('tr');
+              trackRow.className = 'trackRow';
+              let trackCell = document.createElement('td');
+              trackCell.innerHTML = track.name;
+              trackCell.id = track.id;
+              trackRow.appendChild(trackCell);
+              albumTracks.append(trackRow);
+            });
+          });
         }
-        });
-      })();
+      }
+
+      function showArtistAlbums(artistId) {
+        let artistAlbum = document.getElementById(artistId).querySelector('#artistAlbumTable');
+        if (artistAlbum) {
+          artistAlbum.classList.toggle('hidden');
+        }
+        else {
+          $.ajax({
+            url: `/artists/${artistId}/albums`,
+            type: 'GET',
+            data: {'access_token': access_token},
+            dataType: 'json',
+            contentType: 'application/json charset=utf-8',
+            cache: false
+          }).done(function (response) {
+            let artistRow = document.getElementById(response.artistId);
+            let artistAlbumTable = document.createElement('table');
+            artistAlbumTable.id = 'artistAlbumTable';
+            artistRow.appendChild(artistAlbumTable);
+            response.albums.forEach(album => {
+              let artistAlbumRow = document.createElement('tr');
+              artistAlbumRow.className = 'artistAlbumRow';
+              let artistAlbumCell = document.createElement('td');
+              let artistAlbumImg = document.createElement('img');
+              artistAlbumImg.src = album.images[0].url;
+              artistAlbumImg.width = '150';
+              artistAlbumImg.height = '150';
+              artistAlbumCell.id = album.id;
+              artistAlbumImg.setAttribute('onclick', `showAlbumTracks('${album.id}')`)
+              artistAlbumCell.appendChild(artistAlbumImg);
+              artistAlbumRow.appendChild(artistAlbumCell);
+              artistAlbumTable.appendChild(artistAlbumRow);
+            });
+          });
+        }
+      }
+
+      document.getElementById('btnSearchArtist').addEventListener('click', function() {
+        let artist = $('#txtSearchArtist').val(); 
+        if (artist === '') {
+          alert("Artist search must not be empty");
+        }
+        else {
+          $.ajax({
+            url: '/getArtist/' + encodeURIComponent(artist),
+          type: 'GET',
+          data: {'access_token': access_token},
+          dataType: 'json',
+          contentType: 'application/json charset=utf-8',
+          cache: false              
+          }).done(function (response) {
+            let artistResults = document.getElementById('searchArtistResults'); 
+            while (artistResults.firstChild) {
+              artistResults.removeChild(artistResults.firstChild);
+            }
+            let artistTable = document.createElement('table');
+            artistTable.id = 'artistTable';
+            artistResults.appendChild(artistTable);
+            response.forEach(artist => {
+              let artistRow = document.createElement('tr');
+              artistRow.className = 'artistRow';
+              let artistCell = document.createElement('td');
+              let artistImg = document.createElement('img');
+              artistImg.src = artist.images[0].url;
+              artistImg.width = '150';
+              artistImg.height = '150';
+              artistCell.id = artist.id;
+              artistImg.setAttribute('onclick', `showArtistAlbums('${artist.id}')`)
+              artistCell.appendChild(artistImg);
+              artistRow.appendChild(artistCell);
+              artistTable.appendChild(artistRow);                
+            });
+          }); 
+        }
+      });
     </script>
   </body>
 </html>

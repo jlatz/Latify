@@ -120,6 +120,8 @@ app.get('/refresh_token', (req, res) => {
         'access_token': access_token
       });
     }
+    else
+      console.log(error);
   });
 });
 
@@ -136,16 +138,59 @@ app.get('/getArtist/:artist', (req, res) => {
  
   request.get(authOptions, function(error, response, body) {
     if (!error && response.statusCode === 200) {
-      artistArr = []
+      artistResp = []
       for (let i = 0; i < response.body.artists.items.length; i++) {
         if (response.body.artists.items[i].images[0]?.url != undefined)
-          artistArr.push(response.body.artists.items[i].images[0]?.url);
+          artistResp.push(response.body.artists.items[i]);
       }
-      res.send(artistArr);
+      res.send(artistResp);
     }
-    else {
+    else
       console.log(error);
+  });
+});
+
+app.get('/artists/album/:albumId/tracks', (req, res) => {
+  const {access_token} = req.query;
+  const {albumId} = req.params;
+  var authOptions = {
+    url: `https://api.spotify.com/v1/albums/${albumId}/tracks`,
+    headers: { 'Authorization': 'Bearer ' + access_token },
+    json: true
+  };
+
+  request.get(authOptions, function(error, response, body) {
+    if (!error && response.statusCode === 200) {
+      res.send({
+        'albumId': albumId,
+        'tracks': response.body.items
+      })
     }
+    else
+      console.log(error)
+  })
+});
+
+app.get('/artists/:artistId/albums', (req, res) => {
+ 
+  // requesting access token from refresh token
+  const {access_token} = req.query;
+  const {artistId} = req.params;
+  var authOptions = {
+    url: `https://api.spotify.com/v1/artists/${artistId}/albums?include_groups=album`,
+    headers: { 'Authorization': 'Bearer ' + access_token },
+    json: true
+  };
+ 
+  request.get(authOptions, function(error, response, body) {
+    if (!error && response.statusCode === 200) {
+      res.send({
+        'artistId': artistId,
+        'albums': response.body.items
+      });
+    }
+    else
+      console.log(error);
   });
 });
 
