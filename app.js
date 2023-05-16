@@ -4,12 +4,13 @@
  var cors = require('cors');
  var querystring = require('querystring');
  var cookieParser = require('cookie-parser');
-const { access } = require('fs');
+ var bodyParser = require('body-parser');
  
  var client_id = '4335a95bb28a41f88cc5048fcc64347d'; // Your client id
  var client_secret = 'e5c418a143684cb29fc5c8d0c7efe616'; // Your secret
  var redirect_uri = 'http://localhost:3000/callback'; // Your redirect uri
  var stateKey = 'spotify_auth_state';
+ var scopes = 'user-read-private user-read-email user-modify-playback-state user-read-playback-state';
  
  var app = express();
  
@@ -27,24 +28,24 @@ const { access } = require('fs');
    }
    return text;
  };
- 
+
+ app.use(bodyParser.urlencoded({ extended: true }));
  
  app.use(express.static(__dirname + '/public'))
     .use(cors())
     .use(cookieParser());
- 
+
  app.get('/login', (req, res) => {
   var state = generateRandomString(16);
   res.cookie(stateKey, state);
  
   // your application requests authorization
-  var scope = 'user-read-private user-read-email';
   res.redirect(url.format({
     pathname: 'https://accounts.spotify.com/authorize',
     query: {
       'response_type': 'code',
       'client_id': client_id,
-      'scope': scope,
+      'scope': scopes,
       'redirect_uri': redirect_uri,
       'state': state
     }
@@ -79,7 +80,7 @@ app.get('/callback', (req, res) => {
       json: true
     };
  
-    request.post(authOptions, function(error, response, body) {
+    request.post(authOptions, (error, response, body) => {
       if (!error && response.statusCode === 200) {
         var {access_token} = body,
           {refresh_token} = body;
@@ -113,7 +114,7 @@ app.get('/refresh_token', (req, res) => {
     json: true
   };
  
-  request.post(authOptions, function(error, response, body) {
+  request.post(authOptions, (error, response, body) => {
     if (!error && response.statusCode === 200) {
       var {access_token} = body;
       res.send({
@@ -124,6 +125,23 @@ app.get('/refresh_token', (req, res) => {
       console.log(error);
   });
 });
+
+app.get('/availableDevices', (req, res) => {
+  var {access_token} = req.query;
+  var authOptions = {
+    url: `https://api.spotify.com/v1/me/player/devices`,
+    headers: { 'Authorization': 'Bearer ' + access_token },
+    json: true
+  };
+
+  request.get(authOptions, (error, response, body) => {
+    if (!error && response.statusCode === 200) {
+      res.status(200).send(response.body.devices);
+    }
+    else
+      console.log(response.statusCode);
+  })
+})
 
 app.get('/getArtist/:artist', (req, res) => {
  
@@ -136,7 +154,7 @@ app.get('/getArtist/:artist', (req, res) => {
     json: true
   };
  
-  request.get(authOptions, function(error, response, body) {
+  request.get(authOptions, (error, response, body) => {
     if (!error && response.statusCode === 200) {
       artistResp = []
       for (let i = 0; i < response.body.artists.items.length; i++) {
@@ -150,6 +168,47 @@ app.get('/getArtist/:artist', (req, res) => {
   });
 });
 
+app.put('/track/:trackId/play', (req, res) => {
+  const {access_token} = req.body;
+  const {selectedDeviceId} = req.body;
+  const {trackId} = req.params;
+  var authOptions = {
+    url: 'https://api.spotify.com/v1/me/player/play' + (selectedDeviceId ? `/?device_id=${selectedDeviceId}` : ''),
+    headers: { 'Authorization': 'Bearer ' + access_token },
+    body: {'uris': [`spotify:track:${trackId}`]},
+    json: true
+  };
+  request.put(authOptions, (error, response, body) => {
+    if (!error && response.statusCode === 204) {
+      res.status(200).send(true);
+    }
+    else {
+      console.log(`failed to play track`);
+      console.log(body);
+    }
+  });
+});
+
+app.put('/track/:trackId/pause', (req, res) => {
+  const {access_token} = req.body;
+  const {selectedDeviceId} = req.body;
+  var authOptions = {
+    url: 'https://api.spotify.com/v1/me/player/pause' + (selectedDeviceId ? `/?device_id=${selectedDeviceId}` : ''),
+    headers: { 'Authorization': 'Bearer ' + access_token },
+    json: true
+  };
+  request.put(authOptions, (error, response, body) => {
+    if (!error && response.statusCode === 204) {
+      res.status(200).send(true);
+    }
+    else {
+      console.log(`failed to pause track`);
+      console.log(body);
+    }
+  });
+});
+
+
 app.get('/artists/album/:albumId/tracks', (req, res) => {
   const {access_token} = req.query;
   const {albumId} = req.params;
@@ -159,7 +218,7 @@ app.get('/artists/album/:albumId/tracks', (req, res) => {
     json: true
   };
 
-  request.get(authOptions, function(error, response, body) {
+  request.get(authOptions, (error, response, body) => {
     if (!error && response.statusCode === 200) {
       res.send({
         'albumId': albumId,
@@ -168,7 +227,7 @@ app.get('/artists/album/:albumId/tracks', (req, res) => {
     }
     else
       console.log(error)
-  })
+  });
 });
 
 app.get('/artists/:artistId/albums', (req, res) => {
@@ -182,7 +241,7 @@ app.get('/artists/:artistId/albums', (req, res) => {
     json: true
   };
  
-  request.get(authOptions, function(error, response, body) {
+  request.get(authOptions, (error, response, body) => {
     if (!error && response.statusCode === 200) {
       res.send({
         'artistId': artistId,

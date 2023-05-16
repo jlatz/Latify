@@ -38,6 +38,10 @@
       <input id="btnSearchArtist" type="button" class="btn btn-primary" value="Search" />
     </div>
 
+    <div id="divAvailableDevices">
+      <button id="btnAvailableDevices" class="btn btn-default">Show available devices</button>
+    </div>
+
     <div id="searchArtistResults" style="display: flex;">
     </div>
 
@@ -69,6 +73,7 @@
       </dl>
     </script>
 
+    <script src="https://kit.fontawesome.com/5c02ec2369.js" crossorigin="anonymous"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0-alpha.1/handlebars.min.js"></script>
     <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
     <script>
@@ -90,7 +95,7 @@
         headers: {
           'Authorization': 'Bearer ' + access_token
         }
-      }).done(function (response) {
+      }).done((response) => {
         userProfilePlaceholder.innerHTML = userProfileTemplate(response);
       }); 
       
@@ -100,7 +105,7 @@
           data: {
             'refresh_token': refresh_token
           }
-      }).done(function(data) {
+      }).done((data) => {
           ({access_token} = data);
           oauthPlaceholder.innerHTML = oauthTemplate({
           access_token: access_token,
@@ -108,6 +113,18 @@
           });
         });
       }, false);
+
+      function getSelectedDevice() {
+        let deviceOptions = document.getElementsByName('deviceOptions');
+        let selectedDeviceId;
+        for (const device of deviceOptions) {
+          if (device.checked) {
+            selectedDeviceId = device.value;
+            break;
+          }
+        };
+        return selectedDeviceId;
+      }
       
       function showAlbumTracks(albumId) {
         let artistAlbumTracks = document.getElementById(albumId).querySelector('#albumTracks');
@@ -132,9 +149,46 @@
               let trackCell = document.createElement('td');
               trackCell.innerHTML = track.name;
               trackCell.id = track.id;
+              
+              let playButton = document.createElement('button');
+              let playIcon = document.createElement('i');
+              playIcon.className = 'fa-solid fa-play fa-2xs';
+              playButton.appendChild(playIcon);
+              playButton.onclick = () => {
+                let selectedDeviceId = getSelectedDevice();
+                $.ajax({
+                  url: `/track/${track.id}/play`,
+                  type: 'PUT',
+                  data: {'access_token': access_token, 'selectedDeviceId': selectedDeviceId},
+                  dataType: 'json',
+                  cache: false
+                }).done(() => {
+                  return;
+                });
+              };
+
+              let pauseButton = document.createElement('button');
+              let pauseIcon = document.createElement('i');
+              pauseIcon.className = 'fa-solid fa-pause fa-2xs';
+              pauseButton.appendChild(pauseIcon);
+              pauseButton.onclick = () => {
+                let selectedDeviceId = getSelectedDevice();
+                $.ajax({
+                  url: `/track/${track.id}/pause`,
+                  type: 'PUT',
+                  data: {'access_token': access_token, 'selectedDeviceId': selectedDeviceId},
+                  dataType: 'json',
+                  cache: false
+                }).done(() => {
+                  return;
+                });
+              };
+
               trackRow.appendChild(trackCell);
+              trackRow.appendChild(playButton);
+              trackRow.appendChild(pauseButton);
               albumTracks.append(trackRow);
-            });
+            });           
           });
         }
       }
@@ -152,7 +206,7 @@
             dataType: 'json',
             contentType: 'application/json charset=utf-8',
             cache: false
-          }).done(function (response) {
+          }).done((response) => {
             let artistRow = document.getElementById(response.artistId);
             let artistAlbumTable = document.createElement('table');
             artistAlbumTable.id = 'artistAlbumTable';
@@ -175,7 +229,7 @@
         }
       }
 
-      document.getElementById('btnSearchArtist').addEventListener('click', function() {
+      document.getElementById('btnSearchArtist').addEventListener('click', () => {
         let artist = $('#txtSearchArtist').val(); 
         if (artist === '') {
           alert("Artist search must not be empty");
@@ -183,12 +237,12 @@
         else {
           $.ajax({
             url: '/getArtist/' + encodeURIComponent(artist),
-          type: 'GET',
-          data: {'access_token': access_token},
-          dataType: 'json',
-          contentType: 'application/json charset=utf-8',
-          cache: false              
-          }).done(function (response) {
+            type: 'GET',
+            data: {'access_token': access_token},
+            dataType: 'json',
+            contentType: 'application/json charset=utf-8',
+            cache: false
+          }).done((response) => {
             let artistResults = document.getElementById('searchArtistResults'); 
             while (artistResults.firstChild) {
               artistResults.removeChild(artistResults.firstChild);
@@ -212,6 +266,34 @@
             });
           }); 
         }
+      });
+
+      document.getElementById('btnAvailableDevices').addEventListener('click', () => {
+        $.ajax({
+          url: '/availableDevices',
+          type: 'GET',
+          data: {'access_token': access_token},
+          dataType: 'json',
+          contentType: 'application/json charset=utf-8',
+          cache: false
+        }).done((response) => {
+          let divAvailableDevices = document.getElementById('divAvailableDevices');
+          while (divAvailableDevices.children.length > 1) {
+              divAvailableDevices.removeChild(divAvailableDevices.lastChild);
+          }
+          response.forEach(device => {
+            let deviceLabel = document.createElement('label');
+            deviceLabel.textContent = device.name;
+            let deviceInput = document.createElement('input');
+            deviceInput.id = 'idDeviceOptions';
+            deviceInput.type = 'radio';
+            deviceInput.name = 'deviceOptions';
+            deviceInput.value = device.id;
+            
+            deviceLabel.appendChild(deviceInput);
+            divAvailableDevices.appendChild(deviceLabel);
+          });
+        });          
       });
     </script>
   </body>
