@@ -1,44 +1,47 @@
- var express = require('express'); // Express web server framework
- var request = require('request'); // "Request" library
- var url = require('url');
- var cors = require('cors');
- var querystring = require('querystring');
- var cookieParser = require('cookie-parser');
- var bodyParser = require('body-parser');
- 
- var client_id = '4335a95bb28a41f88cc5048fcc64347d'; // Your client id
- var client_secret = 'e5c418a143684cb29fc5c8d0c7efe616'; // Your secret
- var redirect_uri = 'http://localhost:3000/callback'; // Your redirect uri
- var stateKey = 'spotify_auth_state';
- var scopes = 'user-read-private user-read-email user-modify-playback-state user-read-playback-state';
- 
- var app = express();
- 
- /**
-  * Generates a random string containing numbers and letters
-  * @param  {number} length The length of the string
-  * @return {string} The generated string
-  */
- var generateRandomString = function(length) {
-   var text = '';
-   var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
- 
-   for (var i = 0; i < length; i++) {
-     text += possible.charAt(Math.floor(Math.random() * possible.length));
-   }
-   return text;
- };
+var express = require('express'); // Express web server framework
+var request = require('request'); // "Request" library
+var path = require('path');
+var url = require('url');
+var cors = require('cors');
+var querystring = require('querystring');
+var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser');
 
- app.use(bodyParser.urlencoded({ extended: true }));
- 
- app.use(express.static(__dirname + '/public'))
-    .use(cors())
-    .use(cookieParser());
+var client_id = '4335a95bb28a41f88cc5048fcc64347d'; // Your client id
+var client_secret = 'e5c418a143684cb29fc5c8d0c7efe616'; // Your secret
+var redirect_uri = 'http://localhost:3000/callback'; // Your redirect uri
+var stateKey = 'spotify_auth_state';
+var scopes = 'user-read-private user-read-email user-modify-playback-state user-read-playback-state';
 
- app.get('/login', (req, res) => {
+var app = express();
+
+/**
+* Generates a random string containing numbers and letters
+* @param  {number} length The length of the string
+* @return {string} The generated string
+*/
+var generateRandomString = function(length) {
+  var text = '';
+  var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+  for (var i = 0; i < length; i++) {
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  return text;
+};
+
+app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use(express.static(__dirname + '/public'))
+  .use(cors())
+  .use(cookieParser());
+
+app.use('/home/css', express.static(path.join(__dirname, 'node_modules', 'bootstrap', 'dist', 'css')));
+
+app.get('/login', (req, res) => {
   var state = generateRandomString(16);
   res.cookie(stateKey, state);
- 
+
   // your application requests authorization
   res.redirect(url.format({
     pathname: 'https://accounts.spotify.com/authorize',

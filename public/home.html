@@ -2,7 +2,7 @@
 <html>
   <head>
     <title>Home</title>
-    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/bootstrap.min.css" />
     <style type="text/css">
       .text-overflow {
         overflow: hidden;
@@ -28,7 +28,7 @@
         </div>
         <div id="oauth">
         </div>
-        <button class="btn btn-default" id="obtain-new-token">Obtain new token using the refresh token</button>
+        <button class="btn btn-dark" id="obtain-new-token">Obtain new token using the refresh token</button>
       </div>
     </div>
 
@@ -39,7 +39,7 @@
     </div>
 
     <div id="divAvailableDevices">
-      <button id="btnAvailableDevices" class="btn btn-default">Show available devices</button>
+      <button id="btnAvailableDevices" class="btn btn-primary">Show available devices</button>
     </div>
 
     <div id="searchArtistResults" style="display: flex;">
@@ -129,7 +129,7 @@
       function showAlbumTracks(albumId) {
         let artistAlbumTracks = document.getElementById(albumId).querySelector('#albumTracks');
         if (artistAlbumTracks)
-          artistAlbumTracks.classList.toggle('hidden');
+          artistAlbumTracks.classList.toggle('d-none');
         else {
           $.ajax({
             url: `/artists/album/${albumId}/tracks`,
@@ -140,9 +140,9 @@
             cache: false
           }).done(function (response) {
             let albumRow = document.getElementById(response.albumId);
-            let albumTracks = document.createElement('table');
-            albumTracks.id = 'albumTracks';
-            albumRow.appendChild(albumTracks);
+            let albumTracksTable = document.createElement('table');
+            albumTracksTable.id = 'albumTracks';
+            albumRow.appendChild(albumTracksTable);
             response.tracks.forEach(track => {
               let trackRow = document.createElement('tr');
               trackRow.className = 'trackRow';
@@ -187,7 +187,7 @@
               trackRow.appendChild(trackCell);
               trackRow.appendChild(playButton);
               trackRow.appendChild(pauseButton);
-              albumTracks.append(trackRow);
+              albumTracksTable.append(trackRow);
             });           
           });
         }
@@ -196,7 +196,7 @@
       function showArtistAlbums(artistId) {
         let artistAlbum = document.getElementById(artistId).querySelector('#artistAlbumTable');
         if (artistAlbum) {
-          artistAlbum.classList.toggle('hidden');
+          artistAlbum.classList.toggle('d-none');
         }
         else {
           $.ajax({
@@ -210,6 +210,7 @@
             let artistRow = document.getElementById(response.artistId);
             let artistAlbumTable = document.createElement('table');
             artistAlbumTable.id = 'artistAlbumTable';
+            artistAlbumTable.classList.add('table');
             artistRow.appendChild(artistAlbumTable);
             response.albums.forEach(album => {
               let artistAlbumRow = document.createElement('tr');
@@ -249,6 +250,7 @@
             }
             let artistTable = document.createElement('table');
             artistTable.id = 'artistTable';
+            artistTable.classList.add('table');
             artistResults.appendChild(artistTable);
             response.forEach(artist => {
               let artistRow = document.createElement('tr');
