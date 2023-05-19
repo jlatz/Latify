@@ -1,0 +1,302 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Home</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css" />
+    <style type="text/css">
+      .text-overflow {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        width: 500px;
+      }
+
+      .artist {
+        margin: 5px;
+      }
+
+      .artistRow {
+        margin: 50px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div id="loggedin">
+        <div id="user-profile">
+        </div>
+        <div id="oauth">
+        </div>
+        <button class="btn btn-dark" id="obtain-new-token">Obtain new token using the refresh token</button>
+      </div>
+    </div>
+
+    <br>
+    <div id="searchArtist" class="container">
+      <input id="txtSearchArtist" type="text" placeholder="Enter an Artist Name">
+      <input id="btnSearchArtist" type="button" class="btn btn-primary" value="Search" />
+    </div>
+
+    <div id="divAvailableDevices">
+      <button id="btnAvailableDevices" class="btn btn-primary">Show available devices</button>
+    </div>
+
+    <div id="searchArtistResults" style="display: flex;">
+    </div>
+
+    <script id="user-profile-template" type="text/x-handlebars-template">
+      <h1>Logged in as {{display_name}}</h1>
+      <div class="media">
+        <div class="pull-left">
+          <img class="media-object" width="150" src="{{images.0.url}}" />
+        </div>
+        <div class="media-body">
+          <dl class="dl-horizontal">
+            <dt>Display name</dt><dd class="clearfix">{{display_name}}</dd>
+            <dt>Id</dt><dd>{{id}}</dd>
+            <dt>Email</dt><dd>{{email}}</dd>
+            <dt>Spotify URI</dt><dd><a href="{{external_urls.spotify}}">{{external_urls.spotify}}</a></dd>
+            <dt>Link</dt><dd><a href="{{href}}">{{href}}</a></dd>
+            <dt>Profile Image</dt><dd class="clearfix"><a href="{{images.0.url}}">{{images.0.url}}</a></dd>
+            <dt>Country</dt><dd>{{country}}</dd>
+          </dl>
+        </div>
+      </div>
+    </script>
+
+    <script id="oauth-template" type="text/x-handlebars-template">
+      <h2>oAuth info</h2>
+      <dl class="dl-horizontal">
+        <dt>Access token</dt><dd class="text-overflow">{{access_token}}</dd>
+        <dt>Refresh token</dt><dd class="text-overflow">{{refresh_token}}</dd>
+      </dl>
+    </script>
+
+    <script src="https://kit.fontawesome.com/5c02ec2369.js" crossorigin="anonymous"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0-alpha.1/handlebars.min.js"></script>
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script>
+      const params = new Proxy(new URLSearchParams(window.location.search), {
+        get: (searchParams, prop) => searchParams.get(prop),
+      });
+      
+      const access_token = params.access_token;
+      var userProfileSource = document.getElementById('user-profile-template').innerHTML,
+      userProfileTemplate = Handlebars.compile(userProfileSource),
+      userProfilePlaceholder = document.getElementById('user-profile');
+      
+      var oauthSource = document.getElementById('oauth-template').innerHTML,
+      oauthTemplate = Handlebars.compile(oauthSource),
+      oauthPlaceholder = document.getElementById('oauth');
+      
+      $.ajax({
+        url: 'https://api.spotify.com/v1/me',
+        headers: {
+          'Authorization': 'Bearer ' + access_token
+        }
+      }).done((response) => {
+        userProfilePlaceholder.innerHTML = userProfileTemplate(response);
+      }); 
+      
+      document.getElementById('obtain-new-token').addEventListener('click', function() {
+      $.ajax({
+          url: '/refresh_token',
+          data: {
+            'refresh_token': refresh_token
+          }
+      }).done((data) => {
+          ({access_token} = data);
+          oauthPlaceholder.innerHTML = oauthTemplate({
+          access_token: access_token,
+          refresh_token: refresh_token
+          });
+        });
+      }, false);
+
+      function getSelectedDevice() {
+        let deviceOptions = document.getElementsByName('deviceOptions');
+        let selectedDeviceId;
+        for (const device of deviceOptions) {
+          if (device.checked) {
+            selectedDeviceId = device.value;
+            break;
+          }
+        };
+        return selectedDeviceId;
+      }
+      
+      function showAlbumTracks(albumId) {
+        let artistAlbumTracks = document.getElementById(albumId).querySelector('#albumTracks');
+        if (artistAlbumTracks)
+          artistAlbumTracks.classList.toggle('d-none');
+        else {
+          $.ajax({
+            url: `/artists/album/${albumId}/tracks`,
+            type: 'GET',
+            data: {'access_token': access_token},
+            dataType: 'json',
+            contentType: 'application/json charset=utf-8',
+            cache: false
+          }).done(function (response) {
+            let albumRow = document.getElementById(response.albumId);
+            let albumTracksTable = document.createElement('table');
+            albumTracksTable.id = 'albumTracks';
+            albumRow.appendChild(albumTracksTable);
+            response.tracks.forEach(track => {
+              let trackRow = document.createElement('tr');
+              trackRow.className = 'trackRow';
+              let trackCell = document.createElement('td');
+              trackCell.innerHTML = track.name;
+              trackCell.id = track.id;
+              
+              let playButton = document.createElement('button');
+              let playIcon = document.createElement('i');
+              playIcon.className = 'fa-solid fa-play fa-2xs';
+              playButton.appendChild(playIcon);
+              playButton.onclick = () => {
+                let selectedDeviceId = getSelectedDevice();
+                $.ajax({
+                  url: `/track/${track.id}/play`,
+                  type: 'PUT',
+                  data: {'access_token': access_token, 'selectedDeviceId': selectedDeviceId},
+                  dataType: 'json',
+                  cache: false
+                }).done(() => {
+                  return;
+                });
+              };
+
+              let pauseButton = document.createElement('button');
+              let pauseIcon = document.createElement('i');
+              pauseIcon.className = 'fa-solid fa-pause fa-2xs';
+              pauseButton.appendChild(pauseIcon);
+              pauseButton.onclick = () => {
+                let selectedDeviceId = getSelectedDevice();
+                $.ajax({
+                  url: `/track/${track.id}/pause`,
+                  type: 'PUT',
+                  data: {'access_token': access_token, 'selectedDeviceId': selectedDeviceId},
+                  dataType: 'json',
+                  cache: false
+                }).done(() => {
+                  return;
+                });
+              };
+
+              trackRow.appendChild(trackCell);
+              trackRow.appendChild(playButton);
+              trackRow.appendChild(pauseButton);
+              albumTracksTable.append(trackRow);
+            });           
+          });
+        }
+      }
+
+      function showArtistAlbums(artistId) {
+        let artistAlbum = document.getElementById(artistId).querySelector('#artistAlbumTable');
+        if (artistAlbum) {
+          artistAlbum.classList.toggle('d-none');
+        }
+        else {
+          $.ajax({
+            url: `/artists/${artistId}/albums`,
+            type: 'GET',
+            data: {'access_token': access_token},
+            dataType: 'json',
+            contentType: 'application/json charset=utf-8',
+            cache: false
+          }).done((response) => {
+            let artistRow = document.getElementById(response.artistId);
+            let artistAlbumTable = document.createElement('table');
+            artistAlbumTable.id = 'artistAlbumTable';
+            artistAlbumTable.classList.add('table');
+            artistRow.appendChild(artistAlbumTable);
+            response.albums.forEach(album => {
+              let artistAlbumRow = document.createElement('tr');
+              artistAlbumRow.className = 'artistAlbumRow';
+              let artistAlbumCell = document.createElement('td');
+              let artistAlbumImg = document.createElement('img');
+              artistAlbumImg.src = album.images[0].url;
+              artistAlbumImg.width = '150';
+              artistAlbumImg.height = '150';
+              artistAlbumCell.id = album.id;
+              artistAlbumImg.setAttribute('onclick', `showAlbumTracks('${album.id}')`)
+              artistAlbumCell.appendChild(artistAlbumImg);
+              artistAlbumRow.appendChild(artistAlbumCell);
+              artistAlbumTable.appendChild(artistAlbumRow);
+            });
+          });
+        }
+      }
+
+      document.getElementById('btnSearchArtist').addEventListener('click', () => {
+        let artist = $('#txtSearchArtist').val(); 
+        if (artist === '') {
+          alert("Artist search must not be empty");
+        }
+        else {
+          $.ajax({
+            url: '/getArtist/' + encodeURIComponent(artist),
+            type: 'GET',
+            data: {'access_token': access_token},
+            dataType: 'json',
+            contentType: 'application/json charset=utf-8',
+            cache: false
+          }).done((response) => {
+            let artistResults = document.getElementById('searchArtistResults'); 
+            while (artistResults.firstChild) {
+              artistResults.removeChild(artistResults.firstChild);
+            }
+            let artistTable = document.createElement('table');
+            artistTable.id = 'artistTable';
+            artistTable.classList.add('table');
+            artistResults.appendChild(artistTable);
+            response.forEach(artist => {
+              let artistRow = document.createElement('tr');
+              artistRow.className = 'artistRow';
+              let artistCell = document.createElement('td');
+              let artistImg = document.createElement('img');
+              artistImg.src = artist.images[0].url;
+              artistImg.width = '150';
+              artistImg.height = '150';
+              artistCell.id = artist.id;
+              artistImg.setAttribute('onclick', `showArtistAlbums('${artist.id}')`)
+              artistCell.appendChild(artistImg);
+              artistRow.appendChild(artistCell);
+              artistTable.appendChild(artistRow);                
+            });
+          }); 
+        }
+      });
+
+      document.getElementById('btnAvailableDevices').addEventListener('click', () => {
+        $.ajax({
+          url: '/availableDevices',
+          type: 'GET',
+          data: {'access_token': access_token},
+          dataType: 'json',
+          contentType: 'application/json charset=utf-8',
+          cache: false
+        }).done((response) => {
+          let divAvailableDevices = document.getElementById('divAvailableDevices');
+          while (divAvailableDevices.children.length > 1) {
+              divAvailableDevices.removeChild(divAvailableDevices.lastChild);
+          }
+          response.forEach(device => {
+            let deviceLabel = document.createElement('label');
+            deviceLabel.textContent = device.name;
+            let deviceInput = document.createElement('input');
+            deviceInput.id = 'idDeviceOptions';
+            deviceInput.type = 'radio';
+            deviceInput.name = 'deviceOptions';
+            deviceInput.value = device.id;
+            
+            deviceLabel.appendChild(deviceInput);
+            divAvailableDevices.appendChild(deviceLabel);
+          });
+        });          
+      });
+    </script>
+  </body>
+</html>
