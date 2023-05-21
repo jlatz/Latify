@@ -3,6 +3,7 @@
   <head>
     <title>Home</title>
     <link rel="stylesheet" href="css/bootstrap.min.css" />
+    <link rel="stylesheet" href="css/bootstrap-icons.min.css" />
     <style type="text/css">
       .text-overflow {
         overflow: hidden;
@@ -18,20 +19,48 @@
       .artistRow {
         margin: 50px;
       }
+
+      .cursive-text {
+        font-family: 'Gabriola';
+        font-size: 36px;
+      }
+
+      .icon-link i {
+        font-size: 26px;
+      }
+
+      .navbar {
+        background-color: paleturquoise;
+      }
     </style>
   </head>
 
   <body>
-    <div class="container">
-      <div id="loggedin">
-        <div id="user-profile">
+    <nav class="navbar navbar-expand-lg sticky-top">
+      <div class="container-fluid">
+        <a class="navbar-brand cursive-text" href="#">Latify</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div id="navbarSupportedContent">
+          <ul class="navbar-nav navbar-right mb-2 mb-lg-0">
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle icon-link" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-info-circle"></i>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="/login">new access token</a></li>
+                <li><a class="dropdown-item" href="https://accounts.spotify.com/en/logout">logout <i class="bi bi-box-arrow-right"></i></a></li>
+              </ul>
+            </li>
+            <li class="nav-item">
+              <img id="userProfileImg" width="50" height="50">
+            </li>
+          </ul>
         </div>
-        <div id="oauth">
-        </div>
-        <button class="btn btn-dark" id="obtain-new-token">Obtain new token using the refresh token</button>
       </div>
-    </div>
-
+    </nav>
+    
     <br>
     <div id="searchArtist" class="container">
       <input id="txtSearchArtist" type="text" placeholder="Enter an Artist Name">
@@ -45,50 +74,15 @@
     <div id="searchArtistResults" style="display: flex;">
     </div>
 
-    <script id="user-profile-template" type="text/x-handlebars-template">
-      <h1>Logged in as {{display_name}}</h1>
-      <div class="media">
-        <div class="pull-left">
-          <img class="media-object" width="150" src="{{images.0.url}}" />
-        </div>
-        <div class="media-body">
-          <dl class="dl-horizontal">
-            <dt>Display name</dt><dd class="clearfix">{{display_name}}</dd>
-            <dt>Id</dt><dd>{{id}}</dd>
-            <dt>Email</dt><dd>{{email}}</dd>
-            <dt>Spotify URI</dt><dd><a href="{{external_urls.spotify}}">{{external_urls.spotify}}</a></dd>
-            <dt>Link</dt><dd><a href="{{href}}">{{href}}</a></dd>
-            <dt>Profile Image</dt><dd class="clearfix"><a href="{{images.0.url}}">{{images.0.url}}</a></dd>
-            <dt>Country</dt><dd>{{country}}</dd>
-          </dl>
-        </div>
-      </div>
-    </script>
-
-    <script id="oauth-template" type="text/x-handlebars-template">
-      <h2>oAuth info</h2>
-      <dl class="dl-horizontal">
-        <dt>Access token</dt><dd class="text-overflow">{{access_token}}</dd>
-        <dt>Refresh token</dt><dd class="text-overflow">{{refresh_token}}</dd>
-      </dl>
-    </script>
-
-    <script src="https://kit.fontawesome.com/5c02ec2369.js" crossorigin="anonymous"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0-alpha.1/handlebars.min.js"></script>
-    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/popper.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
     <script>
       const params = new Proxy(new URLSearchParams(window.location.search), {
         get: (searchParams, prop) => searchParams.get(prop),
       });
       
       const access_token = params.access_token;
-      var userProfileSource = document.getElementById('user-profile-template').innerHTML,
-      userProfileTemplate = Handlebars.compile(userProfileSource),
-      userProfilePlaceholder = document.getElementById('user-profile');
-      
-      var oauthSource = document.getElementById('oauth-template').innerHTML,
-      oauthTemplate = Handlebars.compile(oauthSource),
-      oauthPlaceholder = document.getElementById('oauth');
       
       $.ajax({
         url: 'https://api.spotify.com/v1/me',
@@ -96,23 +90,10 @@
           'Authorization': 'Bearer ' + access_token
         }
       }).done((response) => {
-        userProfilePlaceholder.innerHTML = userProfileTemplate(response);
+        console.log(response);
+        let navBarProfileImg = document.getElementById('userProfileImg');
+        navBarProfileImg.src =  response.images[0].url;
       }); 
-      
-      document.getElementById('obtain-new-token').addEventListener('click', function() {
-      $.ajax({
-          url: '/refresh_token',
-          data: {
-            'refresh_token': refresh_token
-          }
-      }).done((data) => {
-          ({access_token} = data);
-          oauthPlaceholder.innerHTML = oauthTemplate({
-          access_token: access_token,
-          refresh_token: refresh_token
-          });
-        });
-      }, false);
 
       function getSelectedDevice() {
         let deviceOptions = document.getElementsByName('deviceOptions');

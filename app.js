@@ -36,7 +36,16 @@ app.use(express.static(__dirname + '/public'))
   .use(cors())
   .use(cookieParser());
 
+// load jquery file
+app.use('/home/js', express.static(path.join(__dirname, 'node_modules', 'jquery', 'dist')));
+// load bootstrap css and js files
 app.use('/home/css', express.static(path.join(__dirname, 'node_modules', 'bootstrap', 'dist', 'css')));
+app.use('/home/js', express.static(path.join(__dirname, 'node_modules', 'bootstrap', 'dist', 'js')));
+//load bootstrap-icon file
+app.use('/home/css', express.static(path.join(__dirname, 'node_modules', 'bootstrap-icons', 'font')));
+// load popperjs file
+app.use('/home/js', express.static(path.join(__dirname, 'node_modules', '@popperjs', 'core', 'dist', 'umd')));
+
 
 app.get('/login', (req, res) => {
   var state = generateRandomString(16);
