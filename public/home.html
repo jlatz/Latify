@@ -16,17 +16,23 @@
         margin: 5px;
       }
 
-      .artistRow {
-        margin: 50px;
-      }
-
       .cursive-text {
         font-family: 'Gabriola';
         font-size: 36px;
       }
 
-      .icon-link i {
-        font-size: 26px;
+      .hover-pointer:hover {
+        cursor: pointer;
+      }
+
+      .is-invalidMsg {
+        color: #ea868f;
+        font-size: 13px;
+        text-align: left;
+      }
+
+      .is-invalidInput {
+        border-color: #ea868f;
       }
 
       .navbar {
@@ -38,23 +44,21 @@
   <body>
     <nav class="navbar navbar-expand-lg sticky-top">
       <div class="container-fluid">
-        <a class="navbar-brand cursive-text" href="#">Latify</a>
+        <a class="navbar-brand cursive-text" href="/">Latify</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div id="navbarSupportedContent">
           <ul class="navbar-nav navbar-right mb-2 mb-lg-0">
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle icon-link" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-info-circle"></i>
+              <a class="link-dark text-decoration-none dropdown-toggle hover-pointer" data-bs-toggle="dropdown" aria-expanded="false">
+                <img id="userProfileImg" width="50" height="50" style="border-radius: 50%;">
               </a>
               <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item" href="/login">new access token</a></li>
-                <li><a class="dropdown-item" href="https://accounts.spotify.com/en/logout">logout <i class="bi bi-box-arrow-right"></i></a></li>
+                <li><a class="dropdown-item" href="/login">New access token</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="https://accounts.spotify.com/en/logout">Sign out <i class="bi bi-box-arrow-right"></i></a></li>
               </ul>
-            </li>
-            <li class="nav-item">
-              <img id="userProfileImg" width="50" height="50">
             </li>
           </ul>
         </div>
@@ -62,16 +66,28 @@
     </nav>
     
     <br>
-    <div id="searchArtist" class="container">
-      <input id="txtSearchArtist" type="text" placeholder="Enter an Artist Name">
-      <input id="btnSearchArtist" type="button" class="btn btn-primary" value="Search" />
-    </div>
-
     <div id="divAvailableDevices">
       <button id="btnAvailableDevices" class="btn btn-primary">Show available devices</button>
     </div>
 
-    <div id="searchArtistResults" style="display: flex;">
+    <br>
+    <div id="searchArtist" class="container">
+      <div class="row">
+        <div class="col-md-6 offset-md-3 text-center">
+          <div id="divArtistSearchBar" class="d-flex justify-content-between">
+            <input type="text" id="txtSearchArtist" class="form-control" placeholder="Enter an Artist Name">
+            <button id="btnSearchArtist" class="btn" type="button"><i class="bi bi-search"></i></button>
+          </div>
+          <div id="searchArtistErrorMsg"></div>
+        </div>
+      </div>
+    </div>
+
+
+    <div id="searchArtistResults" class="container">
+      <div class="row">
+        <div id="artistResults" class="col-md-8 offset-md-2"></div>
+      </div>
     </div>
 
     <script src="js/jquery.min.js"></script>
@@ -90,7 +106,6 @@
           'Authorization': 'Bearer ' + access_token
         }
       }).done((response) => {
-        console.log(response);
         let navBarProfileImg = document.getElementById('userProfileImg');
         navBarProfileImg.src =  response.images[0].url;
       }); 
@@ -132,8 +147,9 @@
               trackCell.id = track.id;
               
               let playButton = document.createElement('button');
+              playButton.classList.add('btn');
               let playIcon = document.createElement('i');
-              playIcon.className = 'fa-solid fa-play fa-2xs';
+              playIcon.className = 'bi bi-play-circle';
               playButton.appendChild(playIcon);
               playButton.onclick = () => {
                 let selectedDeviceId = getSelectedDevice();
@@ -149,8 +165,9 @@
               };
 
               let pauseButton = document.createElement('button');
+              pauseButton.classList.add('btn');
               let pauseIcon = document.createElement('i');
-              pauseIcon.className = 'fa-solid fa-pause fa-2xs';
+              pauseIcon.className = 'bi bi-pause-circle';
               pauseButton.appendChild(pauseIcon);
               pauseButton.onclick = () => {
                 let selectedDeviceId = getSelectedDevice();
@@ -213,10 +230,17 @@
 
       document.getElementById('btnSearchArtist').addEventListener('click', () => {
         let artist = $('#txtSearchArtist').val(); 
+        let searchArtistErrorMsg = document.getElementById('searchArtistErrorMsg');
+        let txtSearchArtist = document.getElementById('txtSearchArtist');
         if (artist === '') {
-          alert("Artist search must not be empty");
+          searchArtistErrorMsg.textContent = 'Input can not be empty';
+          searchArtistErrorMsg.classList.add('is-invalidMsg');
+          txtSearchArtist.classList.add('is-invalidInput');
         }
         else {
+          searchArtistErrorMsg.textContent = '';
+          searchArtistErrorMsg.classList.remove('is-invalidMsg');
+          txtSearchArtist.classList.remove('is-invalidInput');
           $.ajax({
             url: '/getArtist/' + encodeURIComponent(artist),
             type: 'GET',
@@ -225,7 +249,7 @@
             contentType: 'application/json charset=utf-8',
             cache: false
           }).done((response) => {
-            let artistResults = document.getElementById('searchArtistResults'); 
+            let artistResults = document.getElementById('artistResults'); 
             while (artistResults.firstChild) {
               artistResults.removeChild(artistResults.firstChild);
             }
@@ -235,7 +259,6 @@
             artistResults.appendChild(artistTable);
             response.forEach(artist => {
               let artistRow = document.createElement('tr');
-              artistRow.className = 'artistRow';
               let artistCell = document.createElement('td');
               let artistImg = document.createElement('img');
               artistImg.src = artist.images[0].url;
