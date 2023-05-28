@@ -168,7 +168,6 @@
       }
 
       function showArtistAlbums(artistId, artistName) {
-        console.log(artistName);
         let artistAlbum = document.getElementById(artistId).querySelector('#artistAlbumTable');
         let offCanvasBody = document.getElementById('offcanvas-body');
             while (offCanvasBody.firstChild) {
@@ -186,10 +185,8 @@
             contentType: 'application/json charset=utf-8',
             cache: false
           }).done((response) => {
-            console.log(response);
-            if (response.albums.length === 0) {
-              alert('no albums to show');
-            }
+            if (response.albums.length === 0)
+              offCanvasBody.innerHTML = " artist has no albums to show";
             else{
               let artistAlbumTable = document.createElement('table');
               artistAlbumTable.id = 'artistAlbumTable';
@@ -199,11 +196,11 @@
                 let artistAlbumRow = document.createElement('tr');
                 artistAlbumRow.className = 'artistAlbumRow';
                 let artistAlbumCell = document.createElement('td');
+                artistAlbumCell.id = album.id;
                 let artistAlbumImg = document.createElement('img');
                 artistAlbumImg.src = album.images[0].url;
                 artistAlbumImg.width = '150';
                 artistAlbumImg.height = '150';
-                artistAlbumCell.id = album.id;
                 artistAlbumImg.setAttribute('onclick', `showAlbumTracks('${album.id}')`)
                 artistAlbumCell.appendChild(artistAlbumImg);
                 artistAlbumRow.appendChild(artistAlbumCell);
