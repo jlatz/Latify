@@ -32,11 +32,22 @@ var generateRandomString = function(length) {
 
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use(express.static(__dirname + '/public'))
+app.use(express.static(__dirname + '/public/html'))
   .use(cors())
   .use(cookieParser());
 
+// load jquery file
+app.use('/home/js', express.static(path.join(__dirname, 'node_modules', 'jquery', 'dist')));
+// load bootstrap css and js files
 app.use('/home/css', express.static(path.join(__dirname, 'node_modules', 'bootstrap', 'dist', 'css')));
+app.use('/home/css', express.static(path.join(__dirname, 'public', 'css')));
+
+app.use('/home/js', express.static(path.join(__dirname, 'node_modules', 'bootstrap', 'dist', 'js')));
+//load bootstrap-icon file
+app.use('/home/css', express.static(path.join(__dirname, 'node_modules', 'bootstrap-icons', 'font')));
+// load popperjs file
+app.use('/home/js', express.static(path.join(__dirname, 'node_modules', '@popperjs', 'core', 'dist', 'umd')));
+
 
 app.get('/login', (req, res) => {
   var state = generateRandomString(16);
@@ -89,18 +100,18 @@ app.get('/callback', (req, res) => {
           {refresh_token} = body;
 				res.redirect(`/home/?access_token=${access_token}`);
       } else {
-        res.sendFile(__dirname + '/public/invalid.html');
+        res.sendFile(__dirname + '/public/html/invalid.html');
       }
     });
   }
 });
  
 app.get('/home', (req, res) => {
-  res.sendFile(__dirname + '/public/home.html');
+  res.sendFile(__dirname + '/public/html/home.html');
 });
 
 app.get('/invalid', (_, res) => {
-	res.sendFile(__dirname + '/public/invalid.html');
+	res.sendFile(__dirname + '/public/html/invalid.html');
 });
 
 app.get('/refresh_token', (req, res) => {

@@ -1,0 +1,57 @@
+.text-overflow {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 500px;
+}
+
+.artist {
+    margin: 5px;
+}
+
+.card-img-holder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-color {
+    background-color: paleturquoise;
+}
+
+.card-img-top {
+    width: 150px;
+    height: 150px;
+    text-align: center;
+    margin-top: 15px;
+}
+.cursive-text {
+    font-family: 'Gabriola';
+    font-size: 36px;
+}
+
+.hover-pointer:hover {
+    cursor: pointer;
+}
+
+.img-circle {
+    border-radius: 50%;
+}
+
+.is-invalidMsg {
+    color: #ea868f;
+    font-size: 13px;
+    text-align: left;
+}
+
+.is-invalidInput {
+    border-color: #ea868f;
+}
+
+.navbar {
+    background-color: paleturquoise;
+}
+
+.offcanvas {
+    overflow: auto;
+}
