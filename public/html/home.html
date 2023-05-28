@@ -4,41 +4,7 @@
     <title>Home</title>
     <link rel="stylesheet" href="css/bootstrap.min.css" />
     <link rel="stylesheet" href="css/bootstrap-icons.min.css" />
-    <style type="text/css">
-      .text-overflow {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        width: 500px;
-      }
-
-      .artist {
-        margin: 5px;
-      }
-
-      .cursive-text {
-        font-family: 'Gabriola';
-        font-size: 36px;
-      }
-
-      .hover-pointer:hover {
-        cursor: pointer;
-      }
-
-      .is-invalidMsg {
-        color: #ea868f;
-        font-size: 13px;
-        text-align: left;
-      }
-
-      .is-invalidInput {
-        border-color: #ea868f;
-      }
-
-      .navbar {
-        background-color: paleturquoise;
-      }
-    </style>
+    <link rel="stylesheet" href="css/home.css" />
   </head>
 
   <body>
@@ -52,7 +18,7 @@
           <ul class="navbar-nav navbar-right mb-2 mb-lg-0">
             <li class="nav-item dropdown">
               <a class="link-dark text-decoration-none dropdown-toggle hover-pointer" data-bs-toggle="dropdown" aria-expanded="false">
-                <img id="userProfileImg" width="50" height="50" style="border-radius: 50%;">
+                <img id="userProfileImg" class="img-circle" width="50" height="50">
               </a>
               <ul class="dropdown-menu dropdown-menu-end">
                 <li><a class="dropdown-item" href="/login">New access token</a></li>
@@ -75,7 +41,7 @@
       <div class="row">
         <div class="col-md-6 offset-md-3 text-center">
           <div id="divArtistSearchBar" class="d-flex justify-content-between">
-            <input type="text" id="txtSearchArtist" class="form-control" placeholder="Enter an Artist Name">
+            <input type="text" id="txtSearchArtist" class="form-control" placeholder="Enter an artists name">
             <button id="btnSearchArtist" class="btn" type="button"><i class="bi bi-search"></i></button>
           </div>
           <div id="searchArtistErrorMsg"></div>
@@ -86,8 +52,18 @@
 
     <div id="searchArtistResults" class="container">
       <div class="row">
-        <div id="artistResults" class="col-md-8 offset-md-2"></div>
+        <div id="artistResults" class="col-md-8 offset-md-2">
+          <div id="artistCardGroup" class="row row-cols-1 row-cols-md-4 g-4" style="margin-top: 15px;"></div>
+        </div>
       </div>
+    </div>
+
+    <div id="divOffCanvas" class="offcanvas offcanvas-start" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasScrolling" aria-labelledby="offcanvasScrollingLabel">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="offcanvasScrollingLabel"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div id="offcanvas-body"></div>
     </div>
 
     <script src="js/jquery.min.js"></script>
@@ -191,8 +167,13 @@
         }
       }
 
-      function showArtistAlbums(artistId) {
+      function showArtistAlbums(artistId, artistName) {
+        console.log(artistName);
         let artistAlbum = document.getElementById(artistId).querySelector('#artistAlbumTable');
+        let offCanvasBody = document.getElementById('offcanvas-body');
+            while (offCanvasBody.firstChild) {
+              offCanvasBody.removeChild(offCanvasBody.firstChild);
+            }
         if (artistAlbum) {
           artistAlbum.classList.toggle('d-none');
         }
@@ -205,27 +186,35 @@
             contentType: 'application/json charset=utf-8',
             cache: false
           }).done((response) => {
-            let artistRow = document.getElementById(response.artistId);
-            let artistAlbumTable = document.createElement('table');
-            artistAlbumTable.id = 'artistAlbumTable';
-            artistAlbumTable.classList.add('table');
-            artistRow.appendChild(artistAlbumTable);
-            response.albums.forEach(album => {
-              let artistAlbumRow = document.createElement('tr');
-              artistAlbumRow.className = 'artistAlbumRow';
-              let artistAlbumCell = document.createElement('td');
-              let artistAlbumImg = document.createElement('img');
-              artistAlbumImg.src = album.images[0].url;
-              artistAlbumImg.width = '150';
-              artistAlbumImg.height = '150';
-              artistAlbumCell.id = album.id;
-              artistAlbumImg.setAttribute('onclick', `showAlbumTracks('${album.id}')`)
-              artistAlbumCell.appendChild(artistAlbumImg);
-              artistAlbumRow.appendChild(artistAlbumCell);
-              artistAlbumTable.appendChild(artistAlbumRow);
-            });
+            console.log(response);
+            if (response.albums.length === 0) {
+              alert('no albums to show');
+            }
+            else{
+              let artistAlbumTable = document.createElement('table');
+              artistAlbumTable.id = 'artistAlbumTable';
+              artistAlbumTable.classList.add('table');
+              offCanvasBody.appendChild(artistAlbumTable);
+              response.albums.forEach(album => {
+                let artistAlbumRow = document.createElement('tr');
+                artistAlbumRow.className = 'artistAlbumRow';
+                let artistAlbumCell = document.createElement('td');
+                let artistAlbumImg = document.createElement('img');
+                artistAlbumImg.src = album.images[0].url;
+                artistAlbumImg.width = '150';
+                artistAlbumImg.height = '150';
+                artistAlbumCell.id = album.id;
+                artistAlbumImg.setAttribute('onclick', `showAlbumTracks('${album.id}')`)
+                artistAlbumCell.appendChild(artistAlbumImg);
+                artistAlbumRow.appendChild(artistAlbumCell);
+                artistAlbumTable.appendChild(artistAlbumRow);
+              });
+            }
           });
         }
+        document.getElementById('offcanvasScrollingLabel').innerHTML = artistName;
+        let offcanvas = new bootstrap.Offcanvas(document.getElementById('divOffCanvas'));
+        offcanvas.toggle();
       }
 
       document.getElementById('btnSearchArtist').addEventListener('click', () => {
@@ -249,26 +238,29 @@
             contentType: 'application/json charset=utf-8',
             cache: false
           }).done((response) => {
-            let artistResults = document.getElementById('artistResults'); 
-            while (artistResults.firstChild) {
-              artistResults.removeChild(artistResults.firstChild);
-            }
-            let artistTable = document.createElement('table');
-            artistTable.id = 'artistTable';
-            artistTable.classList.add('table');
-            artistResults.appendChild(artistTable);
             response.forEach(artist => {
-              let artistRow = document.createElement('tr');
-              let artistCell = document.createElement('td');
-              let artistImg = document.createElement('img');
-              artistImg.src = artist.images[0].url;
-              artistImg.width = '150';
-              artistImg.height = '150';
-              artistCell.id = artist.id;
-              artistImg.setAttribute('onclick', `showArtistAlbums('${artist.id}')`)
-              artistCell.appendChild(artistImg);
-              artistRow.appendChild(artistCell);
-              artistTable.appendChild(artistRow);                
+              let artistCol = document.createElement('div');
+              artistCol.classList.add('col');
+              artistCardGroup.appendChild(artistCol);
+              let artistCard = document.createElement('div');
+              artistCard.id = artist.id
+              artistCard.classList.add('card', 'card-color', 'h-100', 'hover-pointer');
+              artistCard.setAttribute('onclick', `showArtistAlbums('${artist.id}', '${artist.name}')`)
+              artistCol.appendChild(artistCard);
+              let artistImgDiv = document.createElement('div');
+              artistImgDiv.classList.add('card-img-holder');
+              artistCard.appendChild(artistImgDiv); 
+              let artistCardImg = document.createElement('img');
+              artistCardImg.classList.add('card-img-top', 'img-circle');
+              artistCardImg.src = artist.images[0].url;
+              artistImgDiv.appendChild(artistCardImg);
+              let artistCardBody = document.createElement('div');
+              artistCardBody.classList.add('card-body');
+              artistCard.appendChild(artistCardBody);
+              let artistCardBodyTitle = document.createElement('h5');
+              artistCardBodyTitle.classList.add('card-title');
+              artistCardBodyTitle.textContent = artist.name;
+              artistCardBody.appendChild(artistCardBodyTitle);
             });
           }); 
         }
@@ -291,7 +283,7 @@
             let deviceLabel = document.createElement('label');
             deviceLabel.textContent = device.name;
             let deviceInput = document.createElement('input');
-            deviceInput.id = 'idDeviceOptions';
+            deviceInput.classList.add('deviceOptions');
             deviceInput.type = 'radio';
             deviceInput.name = 'deviceOptions';
             deviceInput.value = device.id;
