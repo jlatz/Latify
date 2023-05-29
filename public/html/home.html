@@ -60,10 +60,18 @@
 
     <div id="divOffCanvas" class="offcanvas offcanvas-start" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasScrolling" aria-labelledby="offcanvasScrollingLabel">
       <div class="offcanvas-header">
-        <h5 class="offcanvas-title" id="offcanvasScrollingLabel"></h5>
+        <h5 id="offcanvasTitleLabel" class="offcanvas-title"></h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
       </div>
       <div id="offcanvas-body"></div>
+    </div>
+
+    <div id="footer">
+      <div id="trackCommands">
+        <button class="btn" type="button"><i class="bi bi-skip-backward-fill"></i></button>
+        <button class="btn" type="button"><i class="bi bi-play-circle"></i></button>
+        <button class="btn" type="button"><i class="bi bi-skip-forward-fill"></i></button>
+      </div>
     </div>
 
     <script src="js/jquery.min.js"></script>
@@ -97,6 +105,22 @@
         };
         return selectedDeviceId;
       }
+
+      function playTrack(trackId) {
+        let footer = document.getElementById('footer');
+        if (footer.style.display === '')
+          footer.style.display = 'flex';
+        let selectedDeviceId = getSelectedDevice();
+        $.ajax({
+          url: `/track/${trackId}/play`,
+          type: 'PUT',
+          data: {'access_token': access_token, 'selectedDeviceId': selectedDeviceId},
+          dataType: 'json',
+          cache: false
+        }).done(() => {
+          return;
+        });
+      };
       
       function showAlbumTracks(albumId) {
         let artistAlbumTracks = document.getElementById(albumId).querySelector('#albumTracks');
@@ -121,24 +145,8 @@
               let trackCell = document.createElement('td');
               trackCell.innerHTML = track.name;
               trackCell.id = track.id;
-              
-              let playButton = document.createElement('button');
-              playButton.classList.add('btn');
-              let playIcon = document.createElement('i');
-              playIcon.className = 'bi bi-play-circle';
-              playButton.appendChild(playIcon);
-              playButton.onclick = () => {
-                let selectedDeviceId = getSelectedDevice();
-                $.ajax({
-                  url: `/track/${track.id}/play`,
-                  type: 'PUT',
-                  data: {'access_token': access_token, 'selectedDeviceId': selectedDeviceId},
-                  dataType: 'json',
-                  cache: false
-                }).done(() => {
-                  return;
-                });
-              };
+              trackCell.classList.add('hover-pointer');
+              trackCell.setAttribute('onclick', `playTrack('${track.id}')`);
 
               let pauseButton = document.createElement('button');
               pauseButton.classList.add('btn');
@@ -159,7 +167,6 @@
               };
 
               trackRow.appendChild(trackCell);
-              trackRow.appendChild(playButton);
               trackRow.appendChild(pauseButton);
               albumTracksTable.append(trackRow);
             });           
@@ -170,9 +177,10 @@
       function showArtistAlbums(artistId, artistName) {
         let artistAlbum = document.getElementById(artistId).querySelector('#artistAlbumTable');
         let offCanvasBody = document.getElementById('offcanvas-body');
-            while (offCanvasBody.firstChild) {
-              offCanvasBody.removeChild(offCanvasBody.firstChild);
-            }
+        while (offCanvasBody.firstChild) {
+          offCanvasBody.removeChild(offCanvasBody.firstChild);
+        }
+        document.getElementById('offcanvasTitleLabel').innerHTML = artistName;
         if (artistAlbum) {
           artistAlbum.classList.toggle('d-none');
         }
@@ -186,7 +194,7 @@
             cache: false
           }).done((response) => {
             if (response.albums.length === 0)
-              offCanvasBody.innerHTML = " artist has no albums to show";
+              offCanvasBody.innerHTML = "artist has no albums to show";
             else{
               let artistAlbumTable = document.createElement('table');
               artistAlbumTable.id = 'artistAlbumTable';
@@ -198,10 +206,11 @@
                 let artistAlbumCell = document.createElement('td');
                 artistAlbumCell.id = album.id;
                 let artistAlbumImg = document.createElement('img');
+                artistAlbumImg.classList.add('hover-pointer');
                 artistAlbumImg.src = album.images[0].url;
                 artistAlbumImg.width = '150';
                 artistAlbumImg.height = '150';
-                artistAlbumImg.setAttribute('onclick', `showAlbumTracks('${album.id}')`)
+                artistAlbumImg.setAttribute('onclick', `showAlbumTracks('${album.id}')`);
                 artistAlbumCell.appendChild(artistAlbumImg);
                 artistAlbumRow.appendChild(artistAlbumCell);
                 artistAlbumTable.appendChild(artistAlbumRow);
@@ -209,7 +218,6 @@
             }
           });
         }
-        document.getElementById('offcanvasScrollingLabel').innerHTML = artistName;
         let offcanvas = new bootstrap.Offcanvas(document.getElementById('divOffCanvas'));
         offcanvas.toggle();
       }
@@ -227,6 +235,10 @@
           searchArtistErrorMsg.textContent = '';
           searchArtistErrorMsg.classList.remove('is-invalidMsg');
           txtSearchArtist.classList.remove('is-invalidInput');
+          let artistCardGroup = document.getElementById('artistCardGroup');
+          while (artistCardGroup.firstChild) {
+            artistCardGroup.removeChild(artistCardGroup.firstChild);
+          }
           $.ajax({
             url: '/getArtist/' + encodeURIComponent(artist),
             type: 'GET',
