@@ -135,8 +135,10 @@ app.get('/refresh_token', (req, res) => {
         'access_token': access_token
       });
     }
-    else
+    else{
+      console.log('Failed to login using authorization token.');
       console.log(error);
+    }
   });
 });
 
@@ -177,8 +179,10 @@ app.get('/getArtist/:artist', (req, res) => {
       }
       res.send(artistResp);
     }
-    else
+    else{
+      console.log(`Failed to retrieve information about the artist ${artist}`);
       console.log(error);
+    }
   });
 });
 
@@ -197,7 +201,7 @@ app.put('/track/:trackId/play', (req, res) => {
       res.status(200).send(true);
     }
     else {
-      console.log(`failed to play track`);
+      console.log(`Failed to play track`);
       console.log(body);
     }
   });
@@ -216,7 +220,7 @@ app.put('/track/:trackId/pause', (req, res) => {
       res.status(200).send(true);
     }
     else {
-      console.log(`failed to pause track`);
+      console.log(`Failed to pause track`);
       console.log(body);
     }
   });
@@ -239,8 +243,10 @@ app.get('/artists/album/:albumId/tracks', (req, res) => {
         'tracks': response.body.items
       })
     }
-    else
+    else{
+      console.log(`Failed to fetch album tracks from album ${albumId}`);
       console.log(error)
+    }
   });
 });
 
