@@ -1,12 +1,9 @@
-.text-overflow {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    width: 500px;
-}
-
 .artist {
     margin: 5px;
+}
+
+.artistTracks {
+    width: 100%;
 }
 
 .card-img-holder {
@@ -30,6 +27,11 @@
     font-size: 36px;
 }
 
+#divAvailableDevices {
+    float: right;
+    margin-right: 20px;
+}
+
 #footer {
     display: none;
     justify-content: center;
@@ -49,14 +51,14 @@
     border-radius: 50%;
 }
 
+.is-invalidInput {
+    border-color: #ea868f;
+}
+
 .is-invalidMsg {
     color: #ea868f;
     font-size: 13px;
     text-align: left;
-}
-
-.is-invalidInput {
-    border-color: #ea868f;
 }
 
 .navbar {
@@ -65,4 +67,23 @@
 
 .offcanvas {
     overflow: auto;
+}
+
+#root {
+    width: 100%;
+}
+
+#searchArtist {
+    margin-top: 30px;
+}
+
+.text-overflow {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 500px;
+}
+
+ul {
+    list-style-type: none;
 }
