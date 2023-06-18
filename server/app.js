@@ -1,11 +1,14 @@
-var express = require('express'); // Express web server framework
-var request = require('request'); // "Request" library
-var path = require('path');
-var url = require('url');
-var cors = require('cors');
-var querystring = require('querystring');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
+import express from 'express'; // Express web server framework
+import request from 'request'; // "Request" library
+//import path, { dirname } from 'path';
+//import url, { fileURLToPath } from 'url';
+// import cors from 'cors';
+import querystring from 'querystring';
+import cookieParser from 'cookie-parser';
+import bodyParser from 'body-parser';
+
+//const __filename = fileURLToPath(import.meta.url);
+//let __dirname = dirname(__filename);
 
 var client_id = '4335a95bb28a41f88cc5048fcc64347d'; // Your client id
 var client_secret = 'e5c418a143684cb29fc5c8d0c7efe616'; // Your secret
@@ -32,40 +35,8 @@ var generateRandomString = function(length) {
 
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use(express.static(__dirname + '/public/html'))
-  .use(cors())
-  .use(cookieParser());
+app.use(cookieParser());
 
-// load jquery file
-app.use('/home/js', express.static(path.join(__dirname, 'node_modules', 'jquery', 'dist')));
-// load bootstrap css and js files
-app.use('/home/css', express.static(path.join(__dirname, 'node_modules', 'bootstrap', 'dist', 'css')));
-app.use('/home/css', express.static(path.join(__dirname, 'public', 'css')));
-
-app.use('/home/js', express.static(path.join(__dirname, 'node_modules', 'bootstrap', 'dist', 'js')));
-//load bootstrap-icon file
-app.use('/home/css', express.static(path.join(__dirname, 'node_modules', 'bootstrap-icons', 'font')));
-// load popperjs file
-app.use('/home/js', express.static(path.join(__dirname, 'node_modules', '@popperjs', 'core', 'dist', 'umd')));
-
-
-app.get('/login', (req, res) => {
-  var state = generateRandomString(16);
-  res.cookie(stateKey, state);
-
-  // your application requests authorization
-  res.redirect(url.format({
-    pathname: 'https://accounts.spotify.com/authorize',
-    query: {
-      'response_type': 'code',
-      'client_id': client_id,
-      'scope': scopes,
-      'redirect_uri': redirect_uri,
-      'state': state
-    }
-  }));
-});
- 
 app.get('/callback', (req, res) => {
  
    // your application requests refresh and access tokens
@@ -96,71 +67,54 @@ app.get('/callback', (req, res) => {
  
     request.post(authOptions, (error, response, body) => {
       if (!error && response.statusCode === 200) {
-        var {access_token} = body,
-          {refresh_token} = body;
-				res.redirect(`/home/?access_token=${access_token}`);
+        var {access_token} = body;
+        res.redirect(`http://localhost:5173/home/?access_token=${access_token}`);
       } else {
-        res.sendFile(__dirname + '/public/html/invalid.html');
+        res.redirect('http://localhost:5173/invalid');
       }
     });
   }
 });
- 
-app.get('/home', (req, res) => {
-  res.sendFile(__dirname + '/public/html/home.html');
-});
 
-app.get('/invalid', (_, res) => {
-	res.sendFile(__dirname + '/public/html/invalid.html');
-});
+app.get('/api/login', (req, res) => {
+  var state = generateRandomString(16);
+  res.cookie(stateKey, state);
 
-app.get('/refresh_token', (req, res) => {
- 
-  // requesting access token from refresh token
-  var {refresh_token} = req.query;
-  var authOptions = {
-    url: 'https://accounts.spotify.com/api/token',
-    headers: { 'Authorization': 'Basic ' + (new Buffer.from(client_id + ':' + client_secret).toString('base64')) },
-    form: {
-      grant_type: 'refresh_token',
-      refresh_token: refresh_token
-    },
-    json: true
+  // your application requests authorization
+  const baseUrl = 'https://accounts.spotify.com/authorize';
+  const queryParams = {
+    'response_type': 'code',
+      'client_id': client_id,
+      'scope': scopes,
+      'redirect_uri': redirect_uri,
+      'state': state,
   };
- 
-  request.post(authOptions, (error, response, body) => {
-    if (!error && response.statusCode === 200) {
-      var {access_token} = body;
-      res.send({
-        'access_token': access_token
-      });
-    }
-    else{
-      console.log('Failed to login using authorization token.');
-      console.log(error);
-    }
-  });
-});
+  const url = new URL(baseUrl);
 
-app.get('/availableDevices', (req, res) => {
+  // Add query parameters
+  Object.entries(queryParams).forEach(([key, value]) => {
+    url.searchParams.append(key, value);
+  });
+  res.redirect(url);
+});
+ 
+
+app.get('/api/availableDevices', (req, res) => {
   var {access_token} = req.query;
   var authOptions = {
     url: `https://api.spotify.com/v1/me/player/devices`,
     headers: { 'Authorization': 'Bearer ' + access_token },
     json: true
   };
-
   request.get(authOptions, (error, response, body) => {
-    if (!error && response.statusCode === 200) {
+    if (!error && response.statusCode === 200)
       res.status(200).send(response.body.devices);
-    }
     else
       console.log(response.statusCode);
   })
 })
 
-app.get('/getArtist/:artist', (req, res) => {
- 
+app.get('/api/getArtist/:artist', (req, res) => {
   // requesting access token from refresh token
   const {access_token} = req.query;
   const {artist} = req.params;
@@ -172,7 +126,7 @@ app.get('/getArtist/:artist', (req, res) => {
  
   request.get(authOptions, (error, response, body) => {
     if (!error && response.statusCode === 200) {
-      artistResp = []
+      let artistResp = [];
       for (let i = 0; i < response.body.artists.items.length; i++) {
         if (response.body.artists.items[i].images[0]?.url != undefined)
           artistResp.push(response.body.artists.items[i]);
@@ -186,7 +140,7 @@ app.get('/getArtist/:artist', (req, res) => {
   });
 });
 
-app.put('/track/:trackId/play', (req, res) => {
+app.put('/api/track/:trackId/play', (req, res) => {
   const {access_token} = req.body;
   const {selectedDeviceId} = req.body;
   const {trackId} = req.params;
@@ -198,16 +152,16 @@ app.put('/track/:trackId/play', (req, res) => {
   };
   request.put(authOptions, (error, response, body) => {
     if (!error && response.statusCode === 204) {
-      res.status(200).send(true);
+      res.status(200).send({'errors': false, 'msg': ''});
     }
     else {
       console.log(`Failed to play track`);
-      console.log(body);
+      res.status(200).send({'errors': true, 'msg': body.error.message});
     }
   });
 });
 
-app.put('/track/:trackId/pause', (req, res) => {
+app.put('/api/track/:trackId/pause', (req, res) => {
   const {access_token} = req.body;
   const {selectedDeviceId} = req.body;
   var authOptions = {
@@ -227,7 +181,7 @@ app.put('/track/:trackId/pause', (req, res) => {
 });
 
 
-app.get('/artists/album/:albumId/tracks', (req, res) => {
+app.get('/api/artists/album/:albumId/tracks', (req, res) => {
   const {access_token} = req.query;
   const {albumId} = req.params;
   var authOptions = {
@@ -250,7 +204,7 @@ app.get('/artists/album/:albumId/tracks', (req, res) => {
   });
 });
 
-app.get('/artists/:artistId/albums', (req, res) => {
+app.get('/api/artists/:artistId/albums', (req, res) => {
  
   // requesting access token from refresh token
   const {access_token} = req.query;

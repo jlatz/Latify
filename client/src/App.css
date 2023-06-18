@@ -1,0 +1,21 @@
+#root {
+  max-width: auto;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.parent {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: paleturquoise;
+}
+
+.overlay {
+  overflow: hidden;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  padding: 10px;
+}
