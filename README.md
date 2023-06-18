@@ -10,12 +10,12 @@ Setup react vite project to work with a server (express in this repo) using prox
 <ul>
 <li>
 Add the following to client/vite.config.js
-Here /api/v1 is mapped to http://localhost:5000/ which is where the server resides
+Here /api/v1 is mapped to http://localhost:3000/ which is where the server resides
 
 ```
 server: {
     proxy: {
-      "/api/v1": "http://localhost:5000/",
+      "/api": "http://localhost:3000/",
     },
   },
 
@@ -41,6 +41,3 @@ Invoke from the root project to run the server and the client. This is done usin
 ```
 npm start
 ```
-
-<h2>Limitation</h2>
-i was not able to map "/" because then localhost:3000/ is used
